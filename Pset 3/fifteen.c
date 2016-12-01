@@ -1,18 +1,10 @@
 /**
  * fifteen.c
  *
- * CS50 AP
- * Name: Olivia Brown
+ * Olivia Brown
+ * obrown917@gmail.com
  *
- * Implements Game of Fifteen (generalized to d x d).
- *
- * Usage: fifteen d
- *
- * whereby the board's dimensions are to be d x d,
- * where d must be in [DIM_MIN,DIM_MAX]
- *
- * Note that usleep is obsolete, but it offers more granularity than
- * sleep and is simpler to use than nanosleep; `man usleep` for more.
+ * Implements Game of Fifteen
  */
 
 // necessary for usleep
@@ -155,10 +147,7 @@ void greet(void)
     usleep(2000000);
 }
 
-/**
- * Initializes the game's board with tiles numbered 1 through d*d - 1
- * (i.e., fills 2D array with values but does not actually print them).
- */
+// Initializes the board with tiles numbered 1 through d*d - 1
 void init(void)
 {
     int n = 0;
@@ -188,7 +177,6 @@ void init(void)
  */
 void draw(void)
 {
-    int n = 0;
     
     // Iterate over rows
     for (int i = 0; i < d; i++)
@@ -196,7 +184,6 @@ void draw(void)
         // Iterate over columns
         for (int j = 0; j < d; j++)
         {
-            n = (n + 1);
             
             // Print number of tile except for 0 tile
             if (board[i][j] > 0)
