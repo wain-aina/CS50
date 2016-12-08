@@ -1,10 +1,13 @@
 /**
  * fifteen.c
  *
- * Olivia Brown
- * obrown917@gmail.com
+ * CS50 AP
+ * Name: Olivia Brown
  *
- * Implements Game of Fifteen
+ * Implements Game of Fifteen (generalized to d x d).
+ *
+ * Usage: fifteen d
+ *
  */
 
 // necessary for usleep
@@ -25,6 +28,8 @@ int board[DIM_MAX][DIM_MAX];
 
 // globally declared board dimension
 int d;
+int y;
+int x;
 
 // prototypes
 void clear(void);
@@ -36,6 +41,9 @@ bool won(void);
 
 int main(int argc, string argv[])
 {
+    // Calls greet function to welcome player
+    greet();
+    
     // Ends program if number of arguments is incorrect in call
     if (argc != 2)
     {
@@ -51,16 +59,18 @@ int main(int argc, string argv[])
                DIM_MIN, DIM_MIN, DIM_MAX, DIM_MAX);
         return 2;
     }
-    
+    else
+    {
+        x = (d - 1);
+        y = (d - 1);
+    }
+ 
     // open log file to record moves
     FILE* file = fopen("log.txt", "w");
     if (file == NULL)
     {
         return 3;
     }
-    
-    // Calls greet function to welcome player
-    greet();
     
     // Calls init function to make array
     init();
@@ -74,7 +84,7 @@ int main(int argc, string argv[])
         // Calls draw function to draw board
         draw();
         
-        // log the current state of the board (for testing)
+        // Log current state of the board
         for (int i = 0; i < d; i++)
         {
             for (int j = 0; j < d; j++)
@@ -92,7 +102,7 @@ int main(int argc, string argv[])
         // Notifies the player that s/he has won
         if (won())
         {
-            printf("ftw!\n");
+            printf("You won!\n");
             break;
         }
         
@@ -100,7 +110,7 @@ int main(int argc, string argv[])
         printf("Tile to move: ");
         int tile = GetInt();
         
-        // quit if user inputs 0 (for testing)
+        // Quit if user inputs 0
         if (tile == 0)
         {
             break;
@@ -208,7 +218,32 @@ void draw(void)
  */
 bool move(int tile)
 {
-    // TODO
+    // Iterate through rows to find tile
+    for (int i = 0; i < d; i++) 
+    {
+        // Iterate through columns to find tile
+        for (int j = 0; j < d; j++) 
+        {
+            // If valid tile
+            if (tile == board[i][j]) 
+            {
+                int blankspace = 0;       
+ 
+                // Check if tile is next to blankspace
+                if (((x == (i - 1)) && (j == y)) || ((x == (i + 1)) && (j == y))
+                || ((i == x) && (y == (j - 1))) || ((i == x) && (y == (j + 1))))
+                {
+                    // Swap tile if allowed
+                    board[x][y] = tile;
+                    board[i][j] = blankspace;
+                    x = i;
+                    y = j;
+                    
+                    return true;
+                }   
+            } 
+        }
+    }
     return false;
 }
 
@@ -218,6 +253,26 @@ bool move(int tile)
  */
 bool won(void)
 {
-    // TODO
+    int finish = d * d - 1;
+    int check = 1;
+  
+    // Iterate over board
+    for (int i = 0; i < d; i++)
+    {
+        for (int j = 0; j < d; j++)
+        {
+            // Checks if counting up from 1
+            if (board[i][j] == check && check <= finish)
+            {
+                check = check + 1;
+        }
+            // Successfully iterated over entire board
+            else if (check > finish)
+            {
+                return true;
+            }
+        }
+  }
+    // Check failed
     return false;
 }
