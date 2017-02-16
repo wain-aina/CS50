@@ -1,11 +1,11 @@
 /**********************************
  * finder.c
- * 
+ *
  * Finder
- * 
+ *
  * Searches for a target string in
  * all files in a directory
- * 
+ *
  **********************************/
 
 #define _BSD_SOURCE
@@ -18,20 +18,20 @@
 #include <dirent.h>
 
 // struct to hold the file name and type
-typedef struct 
+typedef struct
 {
     string name;
     string type;
-} 
+}
 path;
 
 // struct to hold the directory info
-typedef struct 
+typedef struct
 {
     string name;
     int npaths;
     path* paths;
-} 
+}
 directory;
 
 // string to hold the word to seek
@@ -43,8 +43,12 @@ directory populate(directory dir);
 // the function to recursively iterate through directories and handle files
 int seek(directory dir);
 
+void searchContent(char* pFilePath);
+
+
+FILE* g_pFileResult = NULL;
 // main - sets arguments and calls the seek function
-int main(int argc, char* argv[]) 
+int main(int argc, char* argv[])
 {
     
     // TODO: ensure proper number of command line arguments
@@ -67,12 +71,17 @@ int main(int argc, char* argv[])
         dir.name = "./";
     }
     
-    // call the seek function
-    return seek(dir);
+    g_pFileResult = fopen("found.txt", "w+");
+    
+    // Seek function
+    int found = seek(dir);
+    
+    fclose(g_pFileResult);
+    return found;
 }
 
 // for a given directory, searches for files and fills array in the struct
-directory populate(directory dir) 
+directory populate(directory dir)
 {
     // initialize all pointers and values in the given struct
     dir.npaths = 0;
@@ -81,21 +90,21 @@ directory populate(directory dir)
     struct dirent* entry;
     
     // opendir is a system call that opens a "directory stream" containing
-    // information about all files in the given directory (represented here 
+    // information about all files in the given directory (represented here
     // by dir.name)
     dirp = opendir(dir.name);
-    if (dirp == NULL) 
+    if (dirp == NULL)
     {
         printf("Opening directory failed. Check your input filepath!\n");
         return dir;
     }
     
     // while directory stream still contains files, seek through them
-    while((entry = readdir(dirp)) != NULL) 
+    while((entry = readdir(dirp)) != NULL)
     {
         // if entry is a directory and not '.' or '..',
         // increase file count and populate the struct
-        if (entry->d_type == DT_DIR && strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) 
+        if (entry->d_type == DT_DIR && strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0)
         {
             // allocate zeroed-out memory for the construction of the file name
             string name = calloc(1, strlen(dir.name) + strlen(entry->d_name) + 2);
@@ -115,7 +124,7 @@ directory populate(directory dir)
         }
         
         // else if entry is a file, increase file count and populate the struct
-        else if (entry->d_type == DT_REG) 
+        else if (entry->d_type == DT_REG)
         {
             // allocate zeroed-out memory for the construction of the file name
             string name = calloc(1, strlen(dir.name) + strlen(entry->d_name) + 1);
@@ -139,10 +148,97 @@ directory populate(directory dir)
     return dir;
 }
 
-// recursive function to iterate through directories and search files
-int seek(directory dir) 
+// Recursive function to iterate through directories and search files
+int seek(directory dir)
 {
+    DIR* dirp;
+    struct dirent* entry;
     
-    populate(dir.name);
-    return -1;
+    dirp = opendir(dir.name);
+    if (dirp == NULL)
+    {
+        printf("Opening directory failed. Check your filepath! as %s\n", dir.name);
+        return -1;
+    }
+    
+    // While directory still contains files, seek
+    while((entry = readdir(dirp)) != NULL)
+    {
+        // If directory, increase file count and populate the struct
+        if (entry->d_type == DT_DIR && strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0)
+        {
+            // Construction of the file name
+            char* name = calloc(1, strlen(dir.name) + strlen(entry->d_name) + 2);
+            strcat(name, dir.name);
+            strcat(name, "/");
+            strcat(name, entry->d_name);
+            
+            directory childDir;
+            childDir.name = name;
+            
+            seek(childDir);
+            
+            free(name);
+        }
+        
+        // If entry is a file, increase file count and populate the struct
+        else if (entry->d_type == DT_REG)
+        {
+            // Construction of the file name
+            char* name = calloc(1, strlen(dir.name) + strlen(entry->d_name) + 1);
+            strcat(name, dir.name);
+            strcat(name, "/");
+            strcat(name, entry->d_name);
+            
+            searchContent(name);
+            
+            free(name);
+        }
+    }
+    
+    // Close directory stream using system and return
+    closedir(dirp);
+    
+    return 0;
+}
+
+// If found in content, write down the filename into found.txt
+void searchContent(char* pFilePath)
+{
+    int nCursor = 0;
+    FILE* pFile;
+    int ch;
+    
+    // Parameter check
+    if (pFilePath == NULL || strlen(pFilePath) <= 0)
+        return;
+    if (key == NULL || strlen(key) != 0)
+        return;
+    
+    // Check if file can be opened.
+    pFile = fopen(pFilePath, "r");
+    if (pFile == NULL)
+        return;
+    
+    // Find key string in file
+    while (!feof(pFile))
+    {
+        ch = fgetc(pFile);
+        if (ch == key[nCursor])
+            nCursor++;
+        else
+            nCursor = 0;
+        
+        if (nCursor == strlen(key))
+            break;
+    }
+    
+    // If file contains the key, write down the filename to found.txt
+    if (nCursor == strlen(key))
+    {
+        fwrite(pFilePath, strlen(pFilePath), 1, g_pFileResult);
+        fwrite("\n", 1, 1, g_pFileResult);
+    }
+    
+    fclose(pFile);
 }
